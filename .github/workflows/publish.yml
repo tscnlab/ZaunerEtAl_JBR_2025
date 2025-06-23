@@ -27,7 +27,7 @@ jobs:
             libgeos-dev \
             libproj-dev \
             libsqlite3-dev \
-            libfontconfig1- \
+            libfontconfig1-dev \
             libharfbuzz-dev \
             libfribidi-dev
             
