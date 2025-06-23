@@ -21,7 +21,12 @@ jobs:
             libcurl4-openssl-dev \
             libpng-dev \
             libjpeg-dev \
-            libudunits2-dev
+            libudunits2-dev \
+            libtiff-dev \
+            libgdal-dev \
+            libgeos-dev \
+            libproj-dev \
+            libsqlite3-dev
             
       - name: Setup R
         uses: r-lib/actions/setup-r@v2
