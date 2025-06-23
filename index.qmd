@@ -1,18 +1,836 @@
 ---
-title: "Quarto Website Template"
-bibliography: references.bib
+title: "How to deal with darkness: Modelling and visualization of zero-inflated personal light exposure data on a logarithmic scale"
+subtitle: "Supplemental Material S1"
+author: Johannes Zauner, Carolina Guidolin, Manuel Spitschan
 format:
   html:
     toc: true
     toc-location: left
     lightbox: true
+    code-tools: true
 
 ---
 
-This is a Quarto website.
+## Preface
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+this document contains the analysis documentation for the article **How to deal with darkness: Modelling and visualization of zero-inflated personal light exposure data on a logarithmic scale**.
+
+A preprint of the publication is available at [bioRxiv](https://doi.org/10.1101/2024.12.30.630669). This page will be updated with a link and DOI to the main publication in the **Journal of Biological Rhythms** upon release.
+
+```{r Setup}
+
+# install.packages("devtools")
+# devtools::install_github("tscnlab/LightLogR")
+
+library(LightLogR)
+library(tidyverse)
+library(mgcv)
+library(patchwork)
+library(gt)
+library(itsadug)
+library(ggsci)
+library(cowplot)
+library(tweedie)
+library(ggforce)
+```
+
+## Baseline Data and visualization
+
+In this section, we will copy relevant portions of a tutorial from LightLogR [The whole game](https://tscnlab.github.io/LightLogR/articles/Day.html) which will be the basis for both visualizations and analysis.
 
 ```{r}
-1 + 1
+path <- system.file("extdata", 
+              package = "LightLogR")
+
+file.LL <- "205_actlumus_Log_1020_20230904101707532.txt.zip"
+file.env <- "cyepiamb_CW35_Log_1431_20230904081953614.txt.zip"
+tz <- "Europe/Berlin"
+dataset.LL <- import$ActLumus(file.LL, path, auto.id = "^(\\d{3})", tz = tz)
+dataset.env <- import$ActLumus(file.env, path, manual.id = "CW35", tz = tz)
+dataset.LL <- 
+  dataset.LL %>% data2reference(Reference.data = dataset.env, across.id = TRUE)
+dataset.LL <- 
+  dataset.LL %>% select(Id, Datetime, MEDI, Reference)
+dataset.LL.partial <- 
+dataset.LL %>% #dataset
+  filter_Date(start = "2023-09-01", length = days(1)) %>% 
+  aggregate_Datetime(unit = "5 mins")
 ```
+
+## Visualizations
+
+### Pattern
+
+#### Setup
+
+```{r}
+day_ribbon <- 
+  geom_ribbon(aes(ymin = MEDI, ymax=Reference), 
+              alpha = 0.25, fill = "#0073C2FF",
+              outline.type = "upper", col = "#0073C2FF", size = 0.15)
+
+participant_ribbon <- 
+  geom_ribbon(aes(ymin = 0, ymax = MEDI), alpha = 0.30, fill = "#EFC000", 
+              outline.type = "upper", col = "#EFC000", size = 0.4)
+
+lower_bound <- 
+ geom_hline(yintercept = 1, col = "red", lty = 3)
+upper_bound <- 
+ geom_hline(yintercept = 10^5, col = "red", lty = 3)
+time_scale <- 
+  scale_x_time(breaks = c(0, 6, 12, 18, 24)*3600, labels = 
+               scales::label_time(format = "%H:%M"), 
+      expand = c(0, 0), limits = c(0, 24 * 3600))
+
+```
+
+
+#### Visualization A
+
+```{r vis A}
+
+Plot_A <- 
+dataset.LL.partial %>% 
+   gg_day(facetting = FALSE, geom = "blank", y.scale = "identity",
+          x.axis.label = "Local Time (HH:MM)",
+          y.axis.breaks = seq(0, to = 10^5, by = 10^4), 
+          y.axis.label = "Melanopic illuminance (lx, mel EDI)") + #base plot
+  day_ribbon + participant_ribbon +
+ lower_bound + upper_bound + time_scale
+
+Plot_A
+```
+
+
+#### Visualization B
+
+```{r vis B}
+
+Plot_B <- 
+dataset.LL.partial %>% 
+   gg_day(facetting = FALSE, geom = "blank",
+                    x.axis.label = "Local Time (HH:MM)",
+          y.axis.label = "Melanopic illuminance (lx, mel EDI)"
+          ) + #base plot
+  scale_y_log10(breaks = 10^(-5:5), labels = \(x) label_parsed(paste0("10^",log10(x)))) +
+  day_ribbon + participant_ribbon +
+ lower_bound + upper_bound + time_scale
+Plot_B
+```
+
+#### Visualization C
+
+```{r vis C}
+
+Plot_C <-
+dataset.LL.partial %>% 
+  mutate(MEDI = case_when(MEDI == 0 ~ NA,
+                          .default = MEDI),
+         Reference = case_when(Reference == 0 ~ NA,
+                               .default = Reference)) %>% 
+   gg_day(facetting = FALSE, geom = "blank", 
+                    x.axis.label = "Local Time (HH:MM)",
+          y.axis.label = "Melanopic illuminance (lx, mel EDI)"
+          ) + #base plot
+    geom_ribbon(
+      aes(ymin = 
+            ifelse(is.na(MEDI) | MEDI < min(Reference, na.rm = TRUE), 
+                   min(Reference, na.rm = TRUE), MEDI), 
+          ymax=Reference), 
+              alpha = 0.25, fill = "#0073C2FF",
+              outline.type = "upper", col = "#0073C2FF", size = 0.15) + #solar reference
+  geom_ribbon(aes(ymin = min(MEDI, na.rm = TRUE), ymax = MEDI), alpha = 0.30, 
+              fill = "#EFC000",
+              outline.type = "upper", col = "#EFC000", size = 0.4) +
+  geom_point(
+    data = \(x) x %>% filter(is.na(Reference)) %>% mutate(Reference = 10^-4), 
+    aes(y = Reference), col = "#0073C2FF", size = 1, alpha = 0.25) +
+  geom_point(data = \(x) x %>% filter(is.na(MEDI)) %>% mutate(MEDI = 10^-4), 
+              col = "#EFC000", size = 1, alpha = 0.25, position = position_nudge(y=0.05)) +
+  scale_y_log10(breaks = 10^(-5:5), 
+                labels = \(x) label_parsed(ifelse(x == 10^-4, "0", paste0("10^",log10(x))))
+                ) +
+ lower_bound + upper_bound + time_scale
+
+Plot_C
+```
+
+#### Visualization D
+
+```{r vis D}
+
+Plot_D <-
+dataset.LL.partial %>% 
+   gg_day(facetting = FALSE, geom = "blank", 
+                    x.axis.label = "Local Time (HH:MM)",
+          y.axis.label = "Melanopic illuminance (lx, mel EDI)") + #base plot
+ day_ribbon + participant_ribbon +
+ lower_bound + upper_bound + time_scale 
+
+Plot_D
+```
+
+#### Combined Visualization
+
+```{r}
+Pattern <-
+Plot_A + plot_spacer() + Plot_B + plot_spacer() + Plot_C + plot_spacer() + Plot_D + 
+  plot_layout(ncol = 7, nrow = 1, axes = "collect",
+              widths = c(1,-0.15,1,-0.15,1,-0.15,1)) + 
+  plot_annotation(tag_levels = "A") & 
+  theme(
+    plot.tag.position = c(0, 1),
+        plot.tag.location = "plot",
+        plot.tag = element_text(size = 15, hjust = 0.5, vjust =-0.75),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(size = 16)
+        ) +
+  theme(plot.margin = margin(15,10,5,5))
+
+ggsave("figures/Figure_2.pdf", Pattern, width = 17.5, height = 5.5, units = "cm", scale = 2)
+```
+
+### Differences
+
+#### Visualization E
+
+```{r vis E}
+Plot_E <-
+dataset.LL.partial %>% 
+   gg_day(y.axis = Reference - MEDI, facetting = FALSE, geom = "blank", 
+                    x.axis.label = "Local Time (HH:MM)", y.scale = "identity",
+          y.axis.breaks = seq(-10^4, to = 10^5, by = 10^4),
+          y.axis.label = "Daylight - Participant (lx, mel EDI)") + #base plot
+ geom_area(
+   aes(group = consecutive_id((Reference - MEDI) >=0 ),
+       fill = (Reference - MEDI) >=0,
+       col = (Reference - MEDI) >=0
+       ), outline.type = "upper", alpha = 0.25, size = 0.25
+ )+
+  guides(fill = "none", col = "none") +
+  time_scale +
+  geom_hline(aes(yintercept = 0), lty = 2, col = "red") + 
+    scale_fill_manual(values = c("#EFC000", "#0073C2")) + 
+    scale_color_manual(values = c("#EFC000", "#0073C2"))
+
+Plot_E
+
+```
+
+#### Visualization F
+
+```{r vis F}
+Plot_F <-
+dataset.LL.partial %>% 
+   gg_day(facetting = FALSE, geom = "blank", 
+                    x.axis.label = "Local Time (HH:MM)",
+          y.axis.label = "Daylight - Participant (lx, mel EDI)") + #base plot
+ geom_ribbon(
+   aes(
+     ymin = 0, ymax = abs(Reference - MEDI),
+     group = consecutive_id((Reference - MEDI) >=0 ),
+       fill = (Reference - MEDI) >=0,
+       col = (Reference - MEDI) >=0
+       ), outline.type = "upper", alpha = 0.25, size = 0.25
+ )+
+  guides(fill = "none", col = "none") +
+  time_scale +
+  geom_hline(aes(yintercept = 0), lty = 2, col = "red") + 
+    scale_fill_manual(values = c("#EFC000", "#0073C2")) + 
+    scale_color_manual(values = c("#EFC000", "#0073C2")) +
+    scale_y_log10(breaks = 10^(-5:5), labels = \(x) label_parsed(paste0("10^",log10(x))))
+
+Plot_F
+
+```
+
+#### Visualization G
+
+```{r vis G}
+Plot_G <-
+dataset.LL.partial %>% 
+  mutate(MEDI = ifelse(Reference-MEDI == 0, NA, MEDI)) %>% 
+   gg_day(facetting = FALSE, geom = "blank", 
+                    x.axis.label = "Local Time (HH:MM)",
+          y.axis.label = "Daylight - Participant (lx, mel EDI)") + #base plot
+ geom_ribbon(
+   aes(
+     ymin = min(abs(Reference-MEDI), na.rm = TRUE), ymax = abs(Reference - MEDI),
+     group = consecutive_id((Reference - MEDI) >=0 ),
+       fill = (Reference - MEDI) >=0,
+       col = (Reference - MEDI) >=0
+       ), outline.type = "upper", alpha = 0.25, size = 0.25
+ )+
+  guides(fill = "none", col = "none") +
+  time_scale +
+  geom_hline(aes(yintercept = 10^-4), lty = 2, col = "red") + 
+    scale_fill_manual(values = c("#EFC000", "#0073C2")) + 
+    scale_color_manual(values = c("#EFC000", "#0073C2")) +
+  scale_y_log10(breaks = 10^(-5:5), 
+                labels = \(x) label_parsed(ifelse(x == 10^-4, "0", paste0("10^",log10(x))))
+                ) +
+  geom_point(
+    data = \(x) x %>% filter(is.na(MEDI)) %>% mutate(MEDI = 10^-4), 
+    aes(y = MEDI), col = "grey", size = 1, alpha = 0.5)
+
+Plot_G
+
+```
+
+#### Visualization H
+
+```{r vis H}
+Plot_H <-
+dataset.LL.partial %>% 
+   gg_day(y.axis = Reference - MEDI, facetting = FALSE, geom = "blank", 
+                    x.axis.label = "Local Time (HH:MM)",
+          y.axis.label = "Daylight - Participant (lx, mel EDI)") + #base plot
+ geom_area(
+   aes(group = consecutive_id((Reference - MEDI) >=0 ),
+       fill = (Reference - MEDI) >=0,
+       col = (Reference - MEDI) >=0
+       ), outline.type = "upper", alpha = 0.25, size = 0.25
+ )+
+  guides(fill = "none", col = "none") +
+  time_scale +
+  geom_hline(aes(yintercept = 0), lty = 2, col = "red") + 
+    scale_fill_manual(values = c("#EFC000", "#0073C2")) + 
+    scale_color_manual(values = c("#EFC000", "#0073C2"))
+
+Plot_H
+
+```
+
+#### Combined Visualization
+
+```{r}
+Differences <- 
+Plot_E + plot_spacer() + Plot_F + plot_spacer() + Plot_G + plot_spacer() + Plot_H + 
+  plot_layout(ncol = 7, nrow = 1, axes = "collect",
+              widths = c(1,-0.15,1,-0.15,1,-0.15,1)) + 
+  plot_annotation(tag_levels = "A") & 
+  theme(
+    plot.tag.position = c(0, 1),
+        plot.tag.location = "plot",
+        plot.tag = element_text(size = 15, hjust = 0, vjust =-0.75),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(size = 16)
+        ) +
+  theme(plot.margin = margin(15,10,5,5))
+
+ggsave("figures/Figure_3.pdf", Differences, width = 17.5, height = 5.5, units = "cm", scale = 2)
+```
+
+## Modelling
+
+```{r}
+#setting the ends for the cyclic smooth
+knots_day <- list(time = c(0, 24*3600))
+
+model_data <- 
+dataset.LL.partial %>% 
+  ungroup() %>% 
+  rename(Environment = Reference) %>% 
+  pivot_longer(names_to = "type", cols = c(MEDI, Environment)) %>%  
+  arrange(type) %>% 
+  mutate(time = hms::as_hms(Datetime) %>% as.numeric(),
+         time = c(time[-n()], 24*3600),
+         type = factor(type),
+         start.event = time == 0,
+         input_m1 = 
+           case_when(
+             value == 0 ~ NA,
+             .default = value),
+         input_m2 = value + .Machine$double.eps,
+         input_m3 = value + 0.1,
+         input_m4 = value,
+         .by = type
+  )
+```
+
+
+### Model type 1: 0 to NA
+
+```{r}
+pattern_formula <- log10(input_m1) ~ type + s(time, by = type, bs = "cc", k = 24)
+
+model_data_m1 <- 
+  model_data %>% 
+  group_by(type, case = is.na(input_m1)) %>% 
+  mutate(start.event = 
+                        c(TRUE, rep(FALSE, n() -1)))
+
+model_1 <- bam(formula = pattern_formula, 
+             data = model_data_m1, 
+             method = "REML", 
+             knots = knots_day)
+
+r1 <- start_value_rho(model_1, plot=TRUE)
+
+model_1 <- bam(formula = pattern_formula, 
+             data = model_data_m1, 
+             method = "REML", 
+             knots = knots_day, 
+             rho = r1,
+             AR.start = model_data_m1$start.event
+              )
+
+acf_resid(model_1)
+
+summary(model_1)
+
+gam.check(model_1, rep = 500)
+
+estimate_m1 <- 
+plot_smooth(model_1, 
+            view = "time", 
+            plot_all = "type",
+            # rug = F,
+            n.grid = 12*24+1,
+            rm.ranef = FALSE,
+            se = 0)
+
+estimate_m1_dif <- 
+plot_diff(model_1,
+          view = "time",
+          comp = list(type = c("Environment", "MEDI")),
+          rm.ranef = FALSE,
+          n.grid = 12*24+1)
+
+estimate_m1$fv %>% 
+  ggplot(aes(x = time, y = 10^fit, col = type)) +
+  geom_line() +
+  theme_minimal() +
+  scale_x_time(limits = c(0, 24*60*60), expand = c(0,0),
+               breaks = c(0, 6, 12, 18, 24)*60*60, 
+               labels = scales::label_time(format = "%H:%M")
+               ) +
+  scale_y_continuous(transform = "symlog", breaks = c(0, 10^(0:5))) +
+  geom_point(data = model_data, aes(y = value, col = type))
+
+model_data <- 
+model_data %>% 
+  left_join(estimate_m1$fv, by = c("type", "time")) %>% 
+  rename(fit_m1 = fit) %>% 
+  mutate(fit_m1 = (10^(fit_m1)))
+
+```
+
+### Model type 2: adding smallest float to every value
+
+```{r}
+pattern_formula <- log10(input_m2) ~ type + s(time, by = type, bs = "cc", k = 24)
+
+model_2 <- bam(formula = pattern_formula, 
+             data = model_data, 
+             method = "REML", 
+             knots = knots_day)
+
+r1 <- start_value_rho(model_2, plot=TRUE)
+
+model_2 <- bam(formula = pattern_formula, 
+             data = model_data, 
+             method = "REML", 
+             knots = knots_day, 
+             rho = r1,
+             AR.start = model_data$start.event
+              )
+
+acf_resid(model_2)
+
+summary(model_2)
+
+gam.check(model_2, rep = 500)
+
+estimate_m2 <- 
+plot_smooth(model_2, 
+            view = "time", 
+            plot_all = "type",
+            # rug = F,
+            n.grid = 12*24+1,
+            rm.ranef = FALSE,
+            se = 0)
+
+estimate_m2_dif <- 
+plot_diff(model_2,
+          view = "time",
+          comp = list(type = c("Environment", "MEDI")),
+          rm.ranef = FALSE,
+          n.grid = 12*24+1)
+
+estimate_m2$fv %>% 
+  ggplot(aes(x = time, y = (10^fit)-.Machine$double.eps, col = type)) +
+  geom_line() +
+  theme_minimal() +
+  scale_x_time(limits = c(0, 24*60*60), expand = c(0,0),
+               breaks = c(0, 6, 12, 18, 24)*60*60, 
+               labels = scales::label_time(format = "%H:%M")
+               ) +
+  scale_y_continuous(transform = "symlog", breaks = c(0, 10^(0:5))) +
+  geom_point(data = model_data, aes(y = value, col = type))
+
+model_data <- 
+model_data %>% 
+  left_join(estimate_m2$fv, by = c("type", "time")) %>% 
+  rename(fit_m2 = fit) %>% 
+  mutate(fit_m2 = (10^(fit_m2)) - .Machine$double.eps)
+
+```
+### Model type 3: adding -1 log10 to every value
+
+```{r}
+pattern_formula <- log10(input_m3) ~ type + s(time, by = type, bs = "cc", k = 24)
+
+model_3 <- bam(formula = pattern_formula, 
+             data = model_data, 
+             method = "REML", 
+             knots = knots_day)
+
+r1 <- start_value_rho(model_3, plot=TRUE)
+
+model_3 <- bam(formula = pattern_formula,
+             data = model_data,
+             method = "REML",
+             knots = knots_day,
+             rho = r1,
+             AR.start = model_data$start.event
+              )
+
+acf_resid(model_3)
+
+summary(model_3)
+
+gam.check(model_3, rep = 500)
+
+estimate_m3 <- 
+plot_smooth(model_3, 
+            view = "time", 
+            plot_all = "type",
+            # rug = F,
+            n.grid = 12*24+1,
+            rm.ranef = FALSE,
+            se = 0)
+
+estimate_m3_dif <- 
+plot_diff(model_3,
+          view = "time",
+          comp = list(type = c("Environment", "MEDI")),
+          rm.ranef = FALSE,
+          n.grid = 12*24+1)
+
+estimate_m3$fv %>% 
+  ggplot(aes(x = time, y = (10^fit)-0.1, col = type)) +
+  geom_line() +
+  theme_minimal() +
+  scale_x_time(limits = c(0, 24*60*60), expand = c(0,0),
+               breaks = c(0, 6, 12, 18, 24)*60*60, 
+               labels = scales::label_time(format = "%H:%M")
+               ) +
+  scale_y_continuous(transform = "symlog", breaks = c(0, 10^(0:5))) +
+  geom_point(data = model_data, aes(y = value, col = type))
+
+model_data <- 
+model_data %>% 
+  left_join(estimate_m3$fv, by = c("type", "time")) %>% 
+  rename(fit_m3 = fit) %>% 
+  mutate(fit_m3 = (10^(fit_m3))-0.1)
+
+```
+
+### Model type 4: using the Tweedy family
+
+```{r}
+pattern_formula <- input_m4 ~ type + s(time, by = type, bs = "cc", k = 24)
+
+model_4 <- gam(formula = pattern_formula, 
+             data = model_data, 
+             method = "REML", 
+             family = tw,
+             knots = knots_day)
+
+summary(model_4)
+
+gam.check(model_4, rep = 500)
+
+plot(model_4)
+
+estimate_m4 <- 
+plot_smooth(model_4, 
+            view = "time", 
+            plot_all = "type",
+            # rug = F,
+            n.grid = 12*24+1,
+            rm.ranef = FALSE,
+            se = 0)
+
+estimate_m4_dif <- 
+plot_diff(model_4,
+          view = "time",
+          comp = list(type = c("Environment", "MEDI")),
+          rm.ranef = FALSE,
+          n.grid = 12*24+1)
+
+estimate_m4$fv %>% 
+  ggplot(aes(x = time, y = exp(fit), col = type)) +
+  geom_line() +
+  theme_minimal() +
+  scale_x_time(limits = c(0, 24*60*60), expand = c(0,0),
+               breaks = c(0, 6, 12, 18, 24)*60*60, 
+               labels = scales::label_time(format = "%H:%M")
+               ) +
+  scale_y_continuous(transform = "symlog", breaks = c(0, 10^(0:5))) +
+  geom_point(data = model_data, aes(y = value, col = type))
+
+model_data <- 
+model_data %>% 
+  left_join(estimate_m4$fv, by = c("type", "time")) %>% 
+  rename(fit_m4 = fit) %>% 
+  mutate(fit_m4 = exp(fit_m4))
+
+```
+
+### Combined Models
+
+```{r combining models}
+#adding scaled.pearson residuals
+model_data$resid_m1 <- NA
+model_data$resid_m1[!is.na(model_data$input_m1)] <- 
+  (residuals(model_1, type = "scaled.pearson"))
+model_data$resid_m2 <-(residuals(model_2, type = "scaled.pearson"))
+model_data$resid_m3 <- (residuals(model_3, type = "scaled.pearson"))
+model_data$resid_m4 <- (residuals(model_4, type = "scaled.pearson"))
+
+model_data_long <- 
+model_data %>% 
+  pivot_longer(cols = input_m1:resid_m4, names_to = c(".value", "model"), 
+               names_pattern = "(.*)_(m\\d{1})") %>% 
+  mutate(model = model %>% str_replace(pattern = "m", replacement =  "Model "))
+
+
+summary(model_1)
+summary(model_2)
+summary(model_3)
+summary(model_4)
+```
+
+
+```{r combining models2, fig.width = 12, fig.height = 6}
+#model fitted plot
+Model_fitted_plot <- 
+model_data_long %>%
+  ggplot(aes(x = time, y = value, group = type, col = type)) +
+  geom_point(size = 0.5) +
+  geom_line(aes(y = fit), col = "black") +
+  facet_wrap(~model, ncol = 4) + 
+  # geom_line(col = "red") +
+  # geom_line(aes(y = fit_m2), col = "skyblue3") +
+  # geom_line(aes(y = fit_m3), col = "limegreen") +
+  # geom_line(aes(y = fit_m4), col = "orange2") +
+  theme_cowplot() +
+  scale_x_time(limits = c(0, 24*60*60), expand = c(0,0),
+               breaks = c(0, 6, 12, 18, 24)*60*60, 
+               labels = scales::label_time(format = "%H:%M")
+               ) +
+  scale_y_continuous(transform = "symlog", breaks = c(0, 10^(0:5)),
+                     labels = c("0", "1", "10", "100", "1 000", "10 000", "100 000")) +
+  scale_color_jco() +
+  guides(color = "none") +
+  labs(y = "Melanopic illuminance\n(lx, mel EDI)",
+       x = NULL) +
+  theme(
+        strip.text = element_text(size = 14)
+  )
+ 
+
+Model_residual_plot <- 
+model_data_long %>%   
+ggplot(aes(x=time))+
+  geom_point(aes(y=resid), size = 0.5) +
+  facet_wrap(~model, ncol = 4) +
+  theme_cowplot() +
+  coord_cartesian(ylim = c(-5,5)) +
+  time_scale +
+  labs(y = "Scaled Pearson\nresiduals", x = "Local time (HH:MM)") +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank())
+
+Model_fitted_plot / Model_residual_plot + 
+  plot_layout(guides = "collect", heights = c(3,2)) +
+  plot_annotation(tag_levels = "A") &
+  theme(
+    plot.tag.position = c(0, 0.99),
+    plot.tag = element_text(size = 15, hjust = 0.5, vjust = 0, face = "bold"),
+    panel.spacing = unit(2.5, "lines"),
+        plot.tag.location = "plot",
+        axis.text = element_text(size = 13),
+        axis.title = element_text(size = 16)
+        ) +
+  theme(plot.margin = margin(15,10,5,5))
+
+  ggsave("figures/Figure_4.pdf", width = 17.5, height = 8, units = "cm", scale = 2)
+  
+```
+
+
+```{r combining models3, fig.width = 11, fig.height = 6}
+
+Model_zoom1 <- 
+model_data_long %>%
+  ggplot(aes(x = time, y = value, group = type, col = type)) +
+  geom_point(size = 1.5) +
+  geom_line(aes(y = fit)) +
+  facet_wrap(~model, ncol = 4) + 
+  # geom_line(col = "red") +
+  # geom_line(aes(y = fit_m2), col = "skyblue3") +
+  # geom_line(aes(y = fit_m3), col = "limegreen") +
+  # geom_line(aes(y = fit_m4), col = "orange2") +
+  theme_cowplot() +
+  scale_x_time(limits = c(0, 24*60*60), expand = c(0,0),
+               breaks = c(0, 3, 6, 9, 12, 15, 18, 21, 24)*60*60, 
+               labels = scales::label_time(format = "%H:%M")
+               ) +
+  scale_y_continuous(transform = "symlog", breaks = c(0, 10^(0:5)),
+                     labels = c("0", "1", "10", "100", "1 000", "10 000", "100 000")) +
+  scale_color_jco() +
+  guides(color = "none", linetype = guide_legend("Model")) +
+  labs(y = "Melanopic illuminance (lx, mel EDI)",
+       x = NULL) + aes(group = interaction(type, model), linetype = model, col = type) + 
+  facet_zoom(xlim = c(5.5,10)*3600) +
+  scale_linetype_manual(values = 1:4)
+
+Model_zoom2 <- 
+model_data_long %>%
+  ggplot(aes(x = time, y = value, group = type, col = type)) +
+  geom_point(size = 1.5) +
+  geom_line(aes(y = fit)) +
+  facet_wrap(~model, ncol = 4) + 
+  # geom_line(col = "red") +
+  # geom_line(aes(y = fit_m2), col = "skyblue3") +
+  # geom_line(aes(y = fit_m3), col = "limegreen") +
+  # geom_line(aes(y = fit_m4), col = "orange2") +
+  theme_cowplot() +
+  scale_x_time(limits = c(0, 24*60*60), expand = c(0,0),
+               breaks = c(0, 3, 6, 9, 12, 15, 18, 21, 24)*60*60, 
+               labels = scales::label_time(format = "%H:%M")
+               ) +
+  scale_y_continuous(transform = "symlog", breaks = c(0, 10^(0:5)),
+                     labels = c("0", "1", "10", "100", "1 000", "10 000", "100 000")) +
+  scale_color_jco() +
+  guides(color = "none", linetype = guide_legend("Model")) +
+  labs(y = "Melanopic illuminance (lx, mel EDI)",
+       x = NULL) + aes(group = interaction(type, model), linetype = model, col = type) + 
+  facet_zoom(xlim = c(18,23.5)*3600) +
+  scale_linetype_manual(values = 1:4)
+
+Model_zoom1 + guide_area() + Model_zoom2 + 
+  plot_layout(guides = "collect", axes = "collect", widths = c(1, 0.15, 1)) &
+  theme(plot.margin = margin(5,10,5,5),
+                axis.text = element_text(size = 13),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 13)
+        )
+
+ggsave("figures/Figure_5.pdf", width = 17.5, height = 8, units = "cm", scale = 2)
+
+```
+
+### Tweedie distribution
+
+```{r}
+set.seed(123)  # For reproducibility
+mu <- 5     # Mean
+phi <- 1.5       # Dispersion
+p <- 1.5   # Power parameter (Compound Poisson-Gamma)
+
+# Generate random Tweedie values
+tweedie_samples <- rtweedie(n = 100000, mu = mu, phi = phi, power = p)
+tweedie_samples2 <- rtweedie(n = 100000, mu = mu, phi = phi, power = 2)
+tweedie_samples3 <- rpois(n = 100000, lambda = mu)
+norm_samples <- rnorm(n = 100000, mean = mu, sd = 3)
+nbin_samples <- rnbinom(100000, size = phi, mu = mu)
+zero_inflated <- rbinom(100000, 1, 0.07)
+nbin_samples <- ifelse(zero_inflated == 1, 0, nbin_samples)
+zip_samples <- ifelse(zero_inflated == 1, 0, tweedie_samples3)
+
+# Plot histogram
+hist(tweedie_samples, breaks = 50, col = "lightblue", main = "Compound Poisson-Gamma", xlab = "Values", probability = TRUE)
+hist(tweedie_samples2, breaks = 50, col = "lightblue", main = "Gamma", xlab = "Values", probability = TRUE)
+hist(tweedie_samples3, breaks = 50, col = "lightblue", main = "Poisson", xlab = "Values", probability = TRUE)
+hist(norm_samples, breaks = 50, col = "lightblue", main = "Gaussian", xlab = "Values", probability = TRUE)
+hist(nbin_samples, breaks = 50, col = "lightblue", main = "nbin", xlab = "Values", probability = TRUE)
+hist(zip_samples, breaks = 50, col = "lightblue", main = "nbin", xlab = "Values", probability = TRUE)
+
+rdata <- 
+list(Tweedie = tweedie_samples, `Zero-Inflated Negative Binomial` = nbin_samples, `Zero-Inflated Poisson` = zip_samples, Gaussian = norm_samples)
+
+rdata <- 
+rdata |> map(enframe) |> list_rbind(names_to = "Distribution")
+
+
+parameters <- 
+  tibble(Distribution = c("Gaussian", "Tweedie", "Zero-Inflated Negative Binomial", "Zero-Inflated Poisson"),
+         text = c("\u03BC = 5\n\u03c3=3",
+                  "\u03BC = 5\n\u03A6=1.5\np=1.5",
+                  "\u03bb = 5\n\u03A6=1.5\n\u03C0=0.07",
+                  "\u03bb = 5\n\u03C0=0.07"
+                  ),
+         y = c(0.15, 0.17, 0.34, 0.32))
+
+p1 <- 
+rdata |> 
+  mutate(Distribution = factor(Distribution, levels = unique(Distribution))) |> 
+  ggplot(aes(x = value, y = after_stat(density))) + 
+  geom_histogram(binwidth = 0.5) + 
+  facet_wrap(~ Distribution, scales = "free") +
+  theme_cowplot() + 
+  coord_cartesian(xlim = c(0,20)) +
+  labs(y = "Density", x = "Value") +
+  geom_text(inherit.aes = FALSE, data = parameters, aes(x=20, y = y, label = text), hjust = 1, vjust = 1)
+
+p1
+```
+
+
+```{r, fig.width = 8, fig.height = 8}
+coordinates <- c(48.521637, 9.057645)
+
+p2 <-
+dataset.LL |>
+  pivot_longer(c(MEDI, Reference)) |> 
+  add_photoperiod(coordinates) |> 
+  mutate(name = case_match(name,
+    "MEDI" ~ "Participant",
+    "Reference" ~ "Environment"
+  ),
+  photoperiod.state = factor(photoperiod.state, levels = c("day", "night"), labels = c("Daytime", "Nighttime"))) |> 
+  # filter(photoperiod.state == "night") |>
+  ggplot(aes(x = value, y = after_stat(ncount), fill = name)) +
+  geom_histogram(binwidth = 0.2) +
+  scale_x_continuous(transform = "symlog",
+                     breaks = c(0,1,10, 100, 1000, 10000, 100000),
+                     labels= expression(0,10^0,10^1, 10^2, 10^3, 10^4, 10^5)
+                     ) +
+  # scale_alpha_manual(values = c(day = 1, night = 0.45)) +
+  facet_grid(photoperiod.state~name, scales = "free") +
+  scale_fill_manual(values = c("#0073C2FF", "#EFC000")) +
+  labs(x = "Melanopic illuminance (lx, mel EDI)", y = "Scaled counts (max = 1)", alpha = "Photoperiod state") +
+  guides(fill = "none") +
+  theme_cowplot()
+  # theme(legend.position = "inside",
+  #       legend.position.inside = c(0.75,0.75),
+  #       legend.box.just = "right")
+
+p1/p2 + plot_annotation(tag_levels = "A")
+
+ggsave("figures/Figure_1.tiff", width = 8, height = 8, dpi = 200)
+
+```
+
+
+## Session info
+
+```{r}
+sessionInfo()
+```
+
+

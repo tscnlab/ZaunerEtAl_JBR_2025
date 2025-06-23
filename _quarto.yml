@@ -2,28 +2,20 @@ project:
   type: website
 
 website:
-  title: "Quarto Website Template"
-#  site-url: put site url here
-  repo-url: https://github.com/tscnlab/QuartoWebsite
-#  repo-url: put repo url here and delete previous line
-#  issue-url: put issue subpage here
-  repo-actions: [edit, issue]
+  title: "How to deal with darkness"
+  site-url: https://tscnlab.github.io/ZaunerEtAl_JBR_2025/
+  repo-url: https://github.com/tscnlab/ZaunerEtAl_JBR_2025
   page-navigation: true
   bread-crumbs: true
   navbar:
     left:
       - href: index.qmd
-        text: Home
-      - text: "About"
-        href: about.qmd
+        text: "Supplemental Material S1"
       - text: "License"
-        href: license.md
-      - text: "Contributing"
-        href: contributing.qmd
+        href: license.qmd
     right:
       - icon: github
-        href: https://github.com/tscnlab/QuartoWebsite
-#        href: put repo url here and delete previous line
+        href: https://github.com/tscnlab/ZaunerEtAl_JBR_2025
         aria-label: Quarto GitHub
 
 format:
@@ -37,7 +29,6 @@ format:
 execute:
   freeze: auto
 
-  
 date: last-modified
 
 language:
