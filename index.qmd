@@ -18,7 +18,7 @@ format:
     toc-location: left
     lightbox: true
     code-tools: true
-
+doi: 10.5281/zenodo.15721906
 ---
 
 ## Preface

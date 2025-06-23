@@ -1,0 +1,47 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  How to deal with darkness: Modelling and visualization of
+  zero-inflated personal light exposure data on a
+  logarithmic scale (Supplemental Material S1)
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Johannes
+    family-names: Zauner
+    email: johannes.zauner@tum.de
+    affiliation: >-
+      Technical University of Munich & Max Planck Institute
+      for Biological Cybernetics, Germany
+    orcid: 'https://orcid.org/0000-0003-2171-4566'
+  - given-names: Carolina
+    family-names: Guidolin
+    orcid: 'https://orcid.org/0009-0007-4959-2667'
+    affiliation: >-
+      Max Planck Institute for Biological Cybernetics,
+      Germany
+    email: carolina.guidolin@tuebingen.mpg.de
+  - given-names: Manuel
+    family-names: Spitschan
+    email: manuel.spitschan@tum.de
+    affiliation: >-
+      Technical University of Munich & Max Planck Institute
+      for Biological Cybernetics, Germany
+    orcid: 'https://orcid.org/0000-0002-8572-9268'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.15721906
+    description: Zenodo Archive
+repository-code: 'https://github.com/tscnlab/ZaunerEtAl_JBR_2025'
+url: 'https://tscnlab.github.io/ZaunerEtAl_JBR_2025/'
+abstract: >-
+  This document contains the analysis documentation for the
+  article **How to deal with darkness: Modelling and
+  visualization of zero-inflated personal light exposure
+  data on a logarithmic scale** by the same authors
+license: CC-BY-4.0
+date-released: '2025-06-23'
