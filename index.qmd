@@ -23,9 +23,7 @@ doi: 10.5281/zenodo.15721906
 
 ## Preface
 
-this document contains the analysis documentation for the article **How to deal with darkness: Modelling and visualization of zero-inflated personal light exposure data on a logarithmic scale**.
-
-A preprint of the publication is available at [bioRxiv](https://doi.org/10.1101/2024.12.30.630669). This page will be updated with a link and DOI to the main publication in the **Journal of Biological Rhythms** upon release.
+this document contains the analysis documentation for the article [**How to deal with darkness: Modelling and visualization of zero-inflated personal light exposure data on a logarithmic scale**](https://journals.sagepub.com/doi/10.1177/07487304251336624), released in the **Journal of Biological Rhythms**.
 
 ```{r Setup}
 
