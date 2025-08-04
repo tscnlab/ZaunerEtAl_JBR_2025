@@ -3,8 +3,8 @@ project:
 
 website:
   title: "How to deal with darkness"
-  site-url: https://tscnlab.github.io/ZaunerEtAl_JBR_2025/
-  repo-url: https://github.com/tscnlab/ZaunerEtAl_JBR_2025
+  site-url: https://tscnlab.github.io/ZaunerEtAl_JBiolRhythms_2025/
+  repo-url: https://github.com/tscnlab/ZaunerEtAl_JBiolRhythms_2025
   page-navigation: true
   bread-crumbs: true
   navbar:
@@ -15,7 +15,7 @@ website:
         href: license.qmd
     right:
       - icon: github
-        href: https://github.com/tscnlab/ZaunerEtAl_JBR_2025
+        href: https://github.com/tscnlab/ZaunerEtAl_JBiolRhythms_2025
         aria-label: Quarto GitHub
 
 format:
