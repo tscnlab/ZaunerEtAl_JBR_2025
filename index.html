@@ -9,7 +9,7 @@
 <meta name="author" content="Johannes Zauner">
 <meta name="author" content="Carolina Guidolin">
 <meta name="author" content="Manuel Spitschan">
-<meta name="dcterms.date" content="2025-07-29">
+<meta name="dcterms.date" content="2025-08-04">
 
 <title>How to deal with darkness - How to deal with darkness: Modelling and visualization of zero-inflated personal light exposure data on a logarithmic scale</title>
 <style>
@@ -140,7 +140,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/tscnlab/ZaunerEtAl_JBR_2025"> <i class="bi bi-github" role="img" aria-label="Quarto GitHub">
+    <a class="nav-link" href="https://github.com/tscnlab/ZaunerEtAl_JBiolRhythms_2025"> <i class="bi bi-github" role="img" aria-label="Quarto GitHub">
 </i> 
 <span class="menu-text"></span></a>
   </li>  
@@ -229,7 +229,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Last modified:</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 29, 2025</p>
+      <p class="date">August 4, 2025</p>
     </div>
   </div>
   
@@ -912,8 +912,8 @@ Basis dimension (k) checking results. Low p-value (k-index&lt;1) may
 indicate that k is too low, especially if edf is close to k'.
 
                           k'  edf k-index p-value   
-s(time):typeEnvironment 22.0 14.5    0.87   0.005 **
-s(time):typeMEDI        22.0 18.5    0.87   0.015 * 
+s(time):typeEnvironment 22.0 14.5    0.87   0.015 * 
+s(time):typeMEDI        22.0 18.5    0.87   0.010 **
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 </div>
@@ -1065,8 +1065,8 @@ Basis dimension (k) checking results. Low p-value (k-index&lt;1) may
 indicate that k is too low, especially if edf is close to k'.
 
                           k'  edf k-index p-value
-s(time):typeEnvironment 22.0 16.8    0.99    0.48
-s(time):typeMEDI        22.0 15.6    0.99    0.37</code></pre>
+s(time):typeEnvironment 22.0 16.8    0.99    0.41
+s(time):typeMEDI        22.0 15.6    0.99    0.42</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>estimate_m2 <span class="ot">&lt;-</span> </span>
 <span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_smooth</span>(model_2, </span>
@@ -1219,7 +1219,7 @@ indicate that k is too low, especially if edf is close to k'.
 
                           k'  edf k-index p-value
 s(time):typeEnvironment 22.0 17.6     1.1    0.99
-s(time):typeMEDI        22.0 14.5     1.1    0.99</code></pre>
+s(time):typeMEDI        22.0 14.5     1.1    1.00</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>estimate_m3 <span class="ot">&lt;-</span> </span>
 <span id="cb85-2"><a href="#cb85-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_smooth</span>(model_3, </span>
@@ -3186,7 +3186,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
-<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","loop":false,"selector":".lightbox","openEffect":"zoom","descPosition":"bottom"});
+<script>var lightboxQuarto = GLightbox({"descPosition":"bottom","selector":".lightbox","closeEffect":"zoom","loop":false,"openEffect":"zoom"});
 window.onload = () => {
   lightboxQuarto.on('slide_before_load', (data) => {
     const { slideIndex, slideNode, slideConfig, player, trigger } = data;
