@@ -911,9 +911,9 @@ Model rank =  46 / 46
 Basis dimension (k) checking results. Low p-value (k-index&lt;1) may
 indicate that k is too low, especially if edf is close to k'.
 
-                          k'  edf k-index p-value   
-s(time):typeEnvironment 22.0 14.5    0.87   0.015 * 
-s(time):typeMEDI        22.0 18.5    0.87   0.010 **
+                          k'  edf k-index p-value    
+s(time):typeEnvironment 22.0 14.5    0.87  &lt;2e-16 ***
+s(time):typeMEDI        22.0 18.5    0.87    0.01 ** 
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 </div>
@@ -1065,8 +1065,8 @@ Basis dimension (k) checking results. Low p-value (k-index&lt;1) may
 indicate that k is too low, especially if edf is close to k'.
 
                           k'  edf k-index p-value
-s(time):typeEnvironment 22.0 16.8    0.99    0.41
-s(time):typeMEDI        22.0 15.6    0.99    0.42</code></pre>
+s(time):typeEnvironment 22.0 16.8    0.99    0.47
+s(time):typeMEDI        22.0 15.6    0.99    0.40</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>estimate_m2 <span class="ot">&lt;-</span> </span>
 <span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_smooth</span>(model_2, </span>
@@ -1219,7 +1219,7 @@ indicate that k is too low, especially if edf is close to k'.
 
                           k'  edf k-index p-value
 s(time):typeEnvironment 22.0 17.6     1.1    0.99
-s(time):typeMEDI        22.0 14.5     1.1    1.00</code></pre>
+s(time):typeMEDI        22.0 14.5     1.1    0.99</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>estimate_m3 <span class="ot">&lt;-</span> </span>
 <span id="cb85-2"><a href="#cb85-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_smooth</span>(model_3, </span>
@@ -3186,7 +3186,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
-<script>var lightboxQuarto = GLightbox({"descPosition":"bottom","selector":".lightbox","closeEffect":"zoom","loop":false,"openEffect":"zoom"});
+<script>var lightboxQuarto = GLightbox({"loop":false,"selector":".lightbox","openEffect":"zoom","closeEffect":"zoom","descPosition":"bottom"});
 window.onload = () => {
   lightboxQuarto.on('slide_before_load', (data) => {
     const { slideIndex, slideNode, slideConfig, player, trigger } = data;
