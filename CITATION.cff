@@ -36,8 +36,8 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.15721906
     description: Zenodo Archive
-repository-code: 'https://github.com/tscnlab/ZaunerEtAl_JBR_2025'
-url: 'https://tscnlab.github.io/ZaunerEtAl_JBR_2025/'
+repository-code: 'https://github.com/tscnlab/ZaunerEtAl_JBiolRhythms_2025'
+url: 'https://tscnlab.github.io/ZaunerEtAl_JBiolRhythms_2025/'
 abstract: >-
   This document contains the analysis documentation for the
   article **How to deal with darkness: Modelling and
